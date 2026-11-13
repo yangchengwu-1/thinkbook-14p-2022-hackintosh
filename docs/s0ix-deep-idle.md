@@ -43,3 +43,18 @@ S3 保持 ACPI 屏蔽（`_S3` 改名 + `SSDT-NameS3-disable`），确保走 Deep
 ## 当前选择
 
 日常使用保留加速 + 合盖锁屏/关机（`disablesleep=1`）。若要真睡眠，切 `-wex-noaccel` 并恢复 S0ix 配置。
+
+## 追加测试（2026-11-13 晚）
+
+在 `-wex-noaccel` 验证可行后，又试了两种试图保留加速的组合：
+
+| 配置 | 结果 |
+|---|---|
+| 加速 + `-s0ixgpureset` + `-s0ixnodsm`（跳过显示 DSM） | 睡眠进入 ✅，唤醒 panic：`thread_invoke: preemption_level 1 @sched_prim.c:3033` |
+| 加速 + 自编译 WEX（去掉 host 睡眠钩子 `systemWakeRecovery=false`，保留 #22 唤醒修复） | 睡眠进入 ✅，唤醒冻结/无响应，强制重启 |
+| 加速 + 休眠（`hibernatemode 25` + HibernationFixup 1.5.4 + OC `HibernateMode=Auto`） | 休眠入口死锁，panic 在 `IOAcceleratorFamily2`；未写盘、未恢复（`Hibernation exit count: 0`） |
+
+最终结论：**只要 WEX 加速器参与，ADL-P 的 Deep Idle / 休眠转场就会死锁**，与 DSM、host 睡眠钩子无关；无加速路径则完全稳定。需要上游修改 WEX 加速器的睡眠转场处理。
+
+上游：WhateverXe issue #117（含三组 panic 栈）、S0ixStandby issue #4。
+
