@@ -33,6 +33,7 @@
 | 声音（扬声器/耳机/麦克风） | ✅ | SimpleHDA 1.0.1 + AppleALC 1.9.8 |
 | Wi-Fi（2.4G/5G，802.11ax） | ✅ | AirportRTW 2.3.1 |
 | 合盖锁屏 | ✅ | 自定义 LaunchDaemon + login.framework 私有 API |
+| 显示器睡眠/唤醒 | ✅ | WEX issue #22 修复 6（`wrapDisplay13FBIRQ` 唤醒分支） |
 | 电池合盖 60 秒自动关机 | ✅ | 同上 |
 | 蓝牙 | ❌ | Realtek 无驱动 |
 | S3 睡眠 | ❌ | WEX 驱动缺陷（见 §6） |
@@ -196,6 +197,7 @@ N97FBClockWMAll[27] = 50 (retries), [8] = 0 (never acquired)
 | WEX 0.8.1 + `-wex-noaccel` | ✅ 正常 | 固件恢复失败 → 重启 |
 | **完全去掉 WEX** | ✅ | ✅ 能睡能醒（无加速） |
 | WEX 去掉电源钩子（自编译） | — | GPU 中断 spinlock panic |
+| **WEX 0.8.1 + #22 修复 6** | **✅ 正常** | ❌ 固件恢复失败 → 重启 |
 
 关键证据：
 
@@ -216,6 +218,26 @@ AppleIntelFramebufferController::ProcessInterrupt
 ```
 
 说明钩子是中断安全所必需，但钩子又破坏固件 S3 恢复——**驱动层缺陷，无配置可解**。上游 README 也写明睡眠仅验证过 MiniBook X（MIPI DSI），ADL-H eDP 未验证。
+
+### 6.1.1 2026-11-13 更新：显示器睡眠已修复
+
+应用 WEX issue #22 的修复 6（`wrapDisplay13FBIRQ` 单输出分支）后：
+
+```
+17:20:38 Display is turned off
+17:20:41 Display is turned on     ← 无卡死、无 panic
+```
+
+修复原理：唤醒时原生驱动在 `enablePipe` 设置 PIPECONF **之前**就开中断，完整的 `enable(…,1)` 看到 0 个活动 pipe → `fail(Topology)`、master 关闭 → 收不到 vblank → WindowServer 看门狗。补丁让唤醒时先保持 hotplug-only，等 transcoder 真正运行后由 VBL 回调重新使能 pipe A。
+
+但 **S3 系统睡眠仍然失败**：
+
+```
+17:23:38 Entering Sleep state due to 'Software Sleep'
+17:26:09 Failure: 0x1F EFI/Bootrom Failure after last point of entry to sleep
+```
+
+说明显示管线唤醒已修好，固件级 S3 恢复仍然无解。合盖方案继续保留。
 
 ### 6.2 采用的方案
 
