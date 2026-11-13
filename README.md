@@ -248,8 +248,11 @@ S3 固件恢复无解后，测试了 [S0ixStandby](https://github.com/labrouss/S
 | WEX 加速 + `-s0ixgpureset` | ✅ | ❌ 显示回来但 UI 冻结（`IOAcceleratorFamily2` spinlock panic） |
 | WEX 加速 + 无 `-s0ixgpureset` | ✅ | ❌ 背光亮、无图像（WEX `EL-null` panic） |
 | **WEX 无加速** | ✅ | ✅ 干净唤醒（软件渲染） |
+| 加速 + `-s0ixnodsm`（跳过显示 DSM） | ✅ | ❌ `thread_invoke` 调度器 panic |
+| 加速 + 自编译 WEX（去 host 睡眠钩子） | ✅ | ❌ 唤醒冻结 |
+| 加速 + 休眠（HibernationFixup + OC Auto） | ❌ 入口死锁（`IOAcceleratorFamily2`） | — |
 
-结论：S0ix 方案在 ADL-P 上可用，卡点是 **WEX 加速器无法跨 Deep Idle 恢复**。
+结论：**只要 WEX 加速器参与，ADL-P 的 Deep Idle / 休眠转场就会死锁**（与 DSM、host 睡眠钩子无关）；无加速路径完全稳定。需要上游修改 WEX 加速器睡眠转场。
 
 已报上游：**S0ixStandby #4**、**WhateverXe #117**。
 
