@@ -239,6 +239,20 @@ AppleIntelFramebufferController::ProcessInterrupt
 
 说明显示管线唤醒已修好，固件级 S3 恢复仍然无解。合盖方案继续保留。
 
+### 6.1.2 S0ix（Deep Idle）尝试
+
+S3 固件恢复无解后，测试了 [S0ixStandby](https://github.com/labrouss/S0ixStandby)：让 macOS 睡在 XNU Deep Idle（S0ix）里，而不是 S3。详见 [docs/s0ix-deep-idle.md](docs/s0ix-deep-idle.md)。
+
+| 配置 | 睡眠 | 唤醒 |
+|---|---|---|
+| WEX 加速 + `-s0ixgpureset` | ✅ | ❌ 显示回来但 UI 冻结（`IOAcceleratorFamily2` spinlock panic） |
+| WEX 加速 + 无 `-s0ixgpureset` | ✅ | ❌ 背光亮、无图像（WEX `EL-null` panic） |
+| **WEX 无加速** | ✅ | ✅ 干净唤醒（软件渲染） |
+
+结论：S0ix 方案在 ADL-P 上可用，卡点是 **WEX 加速器无法跨 Deep Idle 恢复**。
+
+已报上游：**S0ixStandby #4**、**WhateverXe #117**。
+
 ### 6.2 采用的方案
 
 1. `pmset -a disablesleep 1`：合盖不睡眠
