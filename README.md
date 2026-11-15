@@ -349,6 +349,19 @@ WEX 下显示器睡眠会挂死。合盖本身关屏没问题，是这条命令�
 
 ---
 
+### 7.5 NVMe：三星 980 PRO 必须更新固件
+
+随机死机，panic：
+
+```
+nvme: "3rd party NVMe controller. Command timeout. Read. fBuiltIn=1
+MODEL=Samsung SSD 980 PRO 500GB FW=1B2QGXA7 ..." @IONVMeController.cpp:5848
+```
+
+原因：980 PRO 的出厂固件 `1B2QGXA7` 有已知缺陷（可能导致盘变只读/锁死），macOS 遇到读超时直接 panic。
+
+修复：Windows 下用 **Samsung Magician** 把固件升到 **5B2QGXA7**（实测有效，更新后 `ioreg` 确认版本变化）。更新前务必备份数据、全程接电源。
+
 ## 8. 合盖锁屏/关机工具
 
 `tools/install-lid-shutdown.sh` 会安装：
