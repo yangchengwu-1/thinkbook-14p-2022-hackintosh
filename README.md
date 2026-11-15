@@ -321,6 +321,14 @@ WEX 下显示器睡眠会挂死。合盖本身关屏没问题，是这条命令�
 - 尝试 one-key-hidpi 写 `/Library/Displays/.../Overrides` 的方案在 macOS 26 上**无效**
 - 需要更多档位只能用 BetterDisplay 之类的运行时工具
 
+### 7.6 摄像头（不支持）
+
+- 硬件为 **Bison UVC**（Windows 硬件 ID `USB\VID_5986&PID_2146&MI_00`），ACPI 有 `IPU0@50000`（Intel IPU）与 `RCAM/RCIR` 节点
+- USB 端口存在且已上电（port 10 / location 6，类型 255 内置），但 macOS **总线上枚举不出设备**，`SPCameraDataType` 为空
+- 对照实验：禁用 USBMap 无效；安装 IOElectrify（USB 供电注入）无效（老 kext 在 macOS 26 不加载）
+- 判断：摄像头模块的上电/数据路由由 Intel IPU/EC 控制，Windows 侧有驱动完成初始化，macOS 无对应驱动 → **不支持**
+- 替代方案：USB 外接摄像头
+
 ### 7.6 启动速度
 
 | 措施 | 效果 |
