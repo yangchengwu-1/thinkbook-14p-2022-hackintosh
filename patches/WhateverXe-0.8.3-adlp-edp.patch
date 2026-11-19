@@ -1,0 +1,66 @@
+--- a/WhateverXe/kern_alderlake_n.hpp	2026-11-19
++++ b/WhateverXe/kern_alderlake_n.hpp	2026-11-19
+@@ -240,7 +240,7 @@
+     // preserve it and include it in the unchanged-source check, never clear it
+     // on an enabled transcoder or infer an MST transport from that bit alone.
+     return (trans&0xFF000000U)==(0x82000000U|((ddi+1)<<27)) && XELPGeometry::rgbLinkDepth(trans) &&
+-        !(trans&((1U<<15)|(1U<<9))) && !ctl2 &&
++        !(trans&((1U<<15)|(1U<<9))) && !(ctl2&~(panel?(1U<<3):0U)) &&
+         (lanes==1 || lanes==2 || lanes==4) && ((buf>>1)&7)==lanes-1 &&
+         (buf&(typeC && tc->ownershipOptional?0x80000080U:0x800000C0U))==
+             (typeC && !tc->ownershipOptional?0x80000040U:0x80000000U) &&
+--- a/WhateverXe/kern_display13_fb_memory.hpp	2026-11-19
++++ b/WhateverXe/kern_display13_fb_memory.hpp	2026-11-19
+@@ -268,8 +268,9 @@
+ // bootScanout=false verifies backing/ownership for a cold allocation without
+ // reading any pipe bank or treating the allocation as an active display.
+ inline bool apertureRange(const Pool &p,uint32_t base,uint32_t bytes,uint64_t apertureBytes) {
+-    return bytes && !(base&4095) && !(bytes&4095) && base>=p.base &&
+-        uint64_t(base)+bytes<=uint64_t(p.base)+p.bytes && uint64_t(base)+bytes<=apertureBytes;
++    const uint64_t end=uint64_t(base)+((uint64_t(bytes)+4095)&~4095ULL);
++    return bytes && !(bytes&63) && !(base&4095) && base>=p.base &&
++        end<=uint64_t(p.base)+p.bytes && end<=apertureBytes;
+ }
+ // Native IntelScaledModeData is a 64-byte CPU allocation. Its map/memory
+ // references are owned by the display pipe until native deallocateScanoutMemory.
+--- a/WhateverXe/kern_xe.cpp	2026-11-19
++++ b/WhateverXe/kern_xe.cpp	2026-11-19
+@@ -3928,7 +3928,10 @@
+     // Display13 physical capacity is shared by ADL-N and mobile ADL/RPL.
+     // VBT chooses board routing; a family name must not exclude TC PHYs.
+     Display13OutputWiring board;
+-    if(!property)board=XELP::VBT::display13Fixed(firmwarePorts,Display13OutputWiring::Physical,xeProfile.family);
++    if(!property) {
++        board=XELP::VBT::display13Fixed(firmwarePorts,Display13OutputWiring::Physical,xeProfile.family);
++        if(checkKernelArgument("-wex-panel-only") && board.panel) {board.dp=0;board.typeC=0;board.hdmi=0;for(auto &pin:board.ddc)pin=0;}
++    }
+     else {
+         // Preserve the older ADL-N Combo property contract. It cannot select TC.
+         if(adlpDisplaySelected)return {};
+@@ -6127,7 +6130,12 @@
+ 		c.status=c.quiescing ? Display13FBIRQ::Status::Power : actual.status;
+ 		if(c.status==Display13FBIRQ::Status::Complete)c.status=c.state.begun && c.state.enabled ?
+ 			Display13FBIRQ::extendActivePipes(io,c.state,admitted) : Display13FBIRQ::enable(io,c.state,excluded,adlnSharedGT(controller),actual.active,callbackXE->adlnOutputWiring.hotplug(),callbackXE->adlnOutputWiring.typeC);
+-	} else c.status=c.quiescing ? Display13FBIRQ::Status::Power : Display13FBIRQ::enable(io,c.state,excluded,adlnSharedGT(controller),1,callbackXE->adlnOutputWiring.hotplug(),callbackXE->adlnOutputWiring.typeC);
++	} else if(c.quiescing)c.status=Display13FBIRQ::Status::Power;
++	else if(c.state.begun && !c.state.faulted && !(c.state.enabled && c.state.active) &&
++		!Display13Transcoder::running(io,0,c.state.transcoders)) {
++		c.status=c.state.enabled && !c.state.active && (io.read(Display13FBIRQ::Master)&Display13FBIRQ::Enable) ?
++			Display13FBIRQ::Status::Complete : Display13FBIRQ::hotplugOnly(io,c.state,false);
++	} else c.status=Display13FBIRQ::enable(io,c.state,excluded,adlnSharedGT(controller),1,callbackXE->adlnOutputWiring.hotplug(),callbackXE->adlnOutputWiring.typeC);
+ 	if(c.status==Display13FBIRQ::Status::Complete)c.rearmPending=false;
+ 	adlnIRQCache(controller,io);adlnIRQRecord(record,1);
+ 	check[23]=static_cast<uint32_t>(c.status);check[24]=c.state.begun;
+--- a/WhateverXe/kern_backligh
++++ b/WhateverXe/kern_backligh
+@@ -4,9 +4,7 @@
+ #include <stdint.h>
+ namespace XeBacklightProfile {
+ constexpr uint8_t curve[] = {
+- 0x00,0x11,0x00,0x00,0x02,0x8F,0x03,0x53,0x04,0x5A,0x05,0xA1,
+- 0x07,0xAE,0x0A,0x3D,0x0E,0x14,0x13,0x74,0x1A,0x5E,0x24,0x18,
+- 0x31,0xA9,0x44,0x59,0x5E,0x76,0x83,0x11,0xB6,0xC7,0xFF,0x7B
++ 0x00,0x11,0x00,0x00,0x01,0xBD,0x06,0x0D,0x0C,0x8E,0x15,0x12,0x1F,0x7C,0x2B,0xB7,0x39,0xB1,0x49,0x5E,0x5A,0xB2,0x6D,0xA2,0x82,0x27,0x98,0x38,0xAF,0xCF,0xC8,0xE5,0xE3,0x76,0xFF,0x7B
+ };
+ inline bool eligible(unsigned uid,unsigned minimum,unsigned maximum,bool internal) {
+  return internal && uid==19 && minimum==0 && maximum==65535;
