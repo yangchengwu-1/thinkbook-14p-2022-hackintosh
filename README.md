@@ -406,6 +406,14 @@ MODEL=Samsung SSD 980 PRO 500GB FW=1B2QGXA7 ..." @IONVMeController.cpp:5848
 
 ---
 
+## EFI 备份
+
+本仓库 `EFI/` 目录是当前可用的 OpenCore EFI（WhateverXe 0.8.3 + P1/P2/P4 + gamma 1.8 曲线 + 对应 0.8.3 的 `WhateverXe.kext`）。
+
+> **已脱敏**：`PlatformInfo → Generic` 里的 `SystemSerialNumber`、`MLB`、`SystemUUID`、`ROM` 已替换为占位符。使用前请用 [GenSMBIOS](https://github.com/corpnewt/GenSMBIOS) 生成自己的 `MacBookPro16,1` 三码并替换，否则 iServices 可能不可用且有封号风险。
+
+Graphics 包（`WhateverXe-Graphics-0.4.4.pkg`）不在此 EFI 内，需单独安装（见 §4）。
+
 ## 11. 文件清单
 
 ```
