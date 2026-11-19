@@ -27,7 +27,7 @@
 
 | 功能 | 状态 | 实现 |
 |---|---|---|
-| 内屏 2880×1800 @ 90Hz | ✅ | WhateverXe 0.8.1 + 4 个本地补丁 + Graphics 0.4.2 |
+| 内屏 2880×1800 @ 90Hz | ✅ | WhateverXe **0.8.3** + 3 个本地补丁 + Graphics 0.4.4 |
 | Metal 2 / 1536 MB | ✅ | 同上 |
 | 亮度（键盘 16 级） | ✅ | SSDT-PNLF（`_UID=19`）+ BrightnessKeys 1.0.3 |
 | 声音（扬声器/耳机/麦克风） | ✅ | SimpleHDA 1.0.1 + AppleALC 1.9.8 |
@@ -45,8 +45,8 @@
 
 | 组件 | 版本 |
 |---|---|
-| WhateverXe | **0.8.1** + 4 处本地补丁（自编译，SHA256 前缀 `5ea720e0`） |
-| WhateverXe Graphics | **0.4.2**（AuxKC 内 `AppleIntelTGLCompat` 0.8.1） |
+| WhateverXe | **0.8.3** + 3 处本地补丁（P1/P2/P4，P3 已并入上游）+ gamma 1.8 背光曲线（自编译） |
+| WhateverXe Graphics | **0.4.4**（内含 `AppleIntelTGLCompat` 0.8.1） |
 | AirportRTW | **2.3.1** |
 | AppleALC | **1.9.8** |
 | SimpleHDA | **1.0.1** |
@@ -98,8 +98,8 @@ ACPI
 ## 4. 安装流程概览
 
 1. OpenCore 基础配置：Lilu、VirtualSMC、AMFIPass、USBMap、VoodooI2C/PS2、SMBIOS `MacBookPro16,1`、`csr-active-config=0x803`
-2. 放入 WhateverXe 0.8.1（**需先打 4 个本地补丁**，见 §5），加入 `-wex-panel-only`
-3. 启动进入系统后安装 `WhateverXe-Graphics-0.4.2.pkg`，重启
+2. 放入 WhateverXe 0.8.3（**需先打 3 个本地补丁** P1/P2/P4，见 §5），加入 `-wex-panel-only`
+3. 启动进入系统后安装 `WhateverXe-Graphics-0.4.4.pkg`，重启
 4. 打亮度：`SSDT-PNLF.aml` + BrightnessKeys
 5. 声音：AppleALC + SimpleHDA（顺序 Lilu → AppleALC → SimpleHDA）+ `DisableLinkeditJettison=true`
 6. Wi-Fi：AirportRTW 2.3.1
@@ -109,7 +109,7 @@ ACPI
 
 ## 5. 四个本地补丁（内屏能亮的关键）
 
-基于 WhateverXe 0.8.1，仓库根目录 `patch -p1`。完整 diff 见 `patches/WhateverXe-0.8.1-adlh-edp.patch`。
+基于 WhateverXe 0.8.3，仓库根目录 `patch -p1`。完整 diff 见 `patches/WhateverXe-0.8.3-adlp-edp.patch`（P3 已由上游内置，0.8.3 起只需 P1/P2/P4 + gamma 曲线）。
 
 ### 5.1 症状与证据
 
@@ -197,7 +197,7 @@ N97FBClockWMAll[27] = 50 (retries), [8] = 0 (never acquired)
 | WEX 0.8.1 + `-wex-noaccel` | ✅ 正常 | 固件恢复失败 → 重启 |
 | **完全去掉 WEX** | ✅ | ✅ 能睡能醒（无加速） |
 | WEX 去掉电源钩子（自编译） | — | GPU 中断 spinlock panic |
-| **WEX 0.8.1 + #22 修复 6** | **✅ 正常** | ❌ 固件恢复失败 → 重启 |
+| **WEX 0.8.3（P1/P2/P4 + gamma）** | **✅ 正常** | ❌ 固件恢复失败 → 重启 |
 
 关键证据：
 
@@ -390,7 +390,7 @@ MODEL=Samsung SSD 980 PRO 500GB FW=1B2QGXA7 ..." @IONVMeController.cpp:5848
 1. **蓝牙**：换 BCM94360NG 网卡（M.2 2230）可同时解决蓝牙和 Wi-Fi 稳定性，换完删掉 AirportRTW 即可
 2. **睡眠**：目前只能靠合盖方案；等上游修 WEX 的电源钩子
 3. **HDMI/USB-C 视频**：`-wex-panel-only` 的代价，需要外接显示时得改接线补丁
-4. **重装系统后**：需重装 Graphics 0.4.2 pkg、重跑合盖脚本；EFI 不变
+4. **重装系统后**：需重装 Graphics 0.4.4 pkg、重跑合盖脚本；EFI 不变
 
 ---
 
