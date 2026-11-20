@@ -280,6 +280,14 @@ WEX 下显示器睡眠会挂死。合盖本身关屏没问题，是这条命令�
 
 ---
 
+## CPU 功耗墙（25W → 45W）
+
+macOS 下持续全核被 EC 限制在 25W（约 1.2GHz），Windows 性能模式可到 4GHz。用 **VoltageShift** 通过 MSR 改写 PL1/PL2，并用 LaunchDaemon 每分钟重新应用，避免被 EC 重置。
+
+修复后全核平均 **2.6GHz**、功耗 45–50W、温度 84°C。详见 [docs/cpu-power.md](docs/cpu-power.md)。
+
+> 尝试过通过 ACPI/EC 调用 Lenovo 性能模式（DSDT 中的 `ECCC(0x60,0xA0)`），但 `_INI` 阶段 EC 未就绪、且会导致触控板失效，已放弃。
+
 ## 7. 其他踩坑记录
 
 ### 7.1 亮度
