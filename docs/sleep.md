@@ -22,7 +22,7 @@
 | 组件 | 设置 |
 |---|---|
 | WEX | 0.8.3 + s0ix-csb-resync + P1/P2/P4 + gamma 1.8 |
-| boot-args | `-wex-s0-csb-resync -s0ixecwake -s0ixacnortc` |
+| boot-args | `-wex-s0-csb-resync -s0ixacnortc` |
 | S0ixStandby | 0.5.4（kext 启用） |
 | ACPI | `SSDT-DEEPIDLE.aml`（Deep Idle 支持） |
 | ACPI | `SSDT-LIDWAKE.aml`（给 LID0 补 `_PRW`，GPE 0x6e） |
@@ -36,7 +36,7 @@ DSDT 里 `LID0`（PNP0C0D）**没有 `_PRW`**，macOS 不把盖子注册为唤�
 - 合盖能睡（Clamshell Sleep），但开盖后只有 EC 事件（`_Q0C`），系统暗唤醒、屏幕不亮
 - 补 `_PRW` 指向 EC GPE 0x6e 后，日志出现 `Wake from Deep Idle ... due to LID0/UserActivity`，屏幕自动点亮
 
-`-s0ixecwake` 负责在进入 Deep Idle 前武装 EC 的 GPE（`EC GPE 0x6e`，I/O 0x187d bit 6）。
+补上 `_PRW` 之后 **不再需要 `-s0ixecwake`**：macOS 会自己从 `_PRW` 武装 EC GPE（实测去掉该参数后开盖仍正常唤醒，日志为 `Wake from Deep Idle ... due to LID0/Lid Open`）。
 
 ## 验证日志
 
