@@ -22,7 +22,7 @@
 | 组件 | 设置 |
 |---|---|
 | WEX | 0.8.3 + s0ix-csb-resync + P1/P2/P4 + gamma 1.8 |
-| boot-args | `-wex-s0-csb-resync -s0ixecwake` |
+| boot-args | `-wex-s0-csb-resync -s0ixecwake -s0ixacnortc` |
 | S0ixStandby | 0.5.4（kext 启用） |
 | ACPI | `SSDT-DEEPIDLE.aml`（Deep Idle 支持） |
 | ACPI | `SSDT-LIDWAKE.aml`（给 LID0 补 `_PRW`，GPE 0x6e） |
