@@ -186,9 +186,23 @@ N97FBClockWMAll[27] = 50 (retries), [8] = 0 (never acquired)
 
 ---
 
-## 6. 睡眠：为什么最终用「合盖锁屏/关机」
+## 6. 睡眠：已解决（Deep Idle S0ix + LID0 唤醒）
 
-### 6.1 实测矩阵
+### 6.0 最终方案（2026-11-21）
+
+| 组件 | 设置 |
+|---|---|
+| WEX | 0.8.3 + **`-wex-s0-csb-resync`**（@brandonedley 补丁）+ P1/P2/P4 + gamma |
+| boot-args | `-wex-s0-csb-resync -s0ixecwake` |
+| S0ixStandby | 0.5.4 + `SSDT-DEEPIDLE.aml` |
+| ACPI | `SSDT-LIDWAKE.aml`：给 LID0 补 `_PRW`（EC GPE 0x6e） |
+| pmset | `sleep 10 displaysleep 10 disablesleep 0 lidwake 1` |
+
+**合盖 → Clamshell Sleep（Deep Idle）→ 开盖 LID0 唤醒 → 屏幕自动亮、Metal 加速保留。**
+
+详见 [docs/sleep.md](docs/sleep.md)。合盖关机守护已移除。
+
+### 6.1 历史实测矩阵（已过时）
 
 | 配置 | 显示器睡眠 | 系统睡眠 S3 |
 |---|---|---|
