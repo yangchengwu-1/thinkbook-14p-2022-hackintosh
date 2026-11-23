@@ -302,6 +302,12 @@ macOS 下持续全核被 EC 限制在 25W（约 1.2GHz），Windows 性能模式
 
 > 尝试过通过 ACPI/EC 调用 Lenovo 性能模式（DSDT 中的 `ECCC(0x60,0xA0)`），但 `_INI` 阶段 EC 未就绪、且会导致触控板失效，已放弃。
 
+## CPU 持续功耗墙（25W）
+
+macOS 下持续全核被 EC 限制在 25W（约 1.2GHz），短时 PL2 可到 45W/2.7GHz。Windows 野兽模式可 45W 持续。
+已尝试 MSR、cTDP、EC 寄存器、DYTC、DSDT 补丁、MCHBAR（kext/ACPI）等全部路径，确认 **EC 固件层无软件解**。
+详见 [docs/cpu-power-limit.md](docs/cpu-power-limit.md)。
+
 ## 7. 其他踩坑记录
 
 ### 7.1 亮度
